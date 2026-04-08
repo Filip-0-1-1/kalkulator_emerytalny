@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Retirement Calculator</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .results {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .result-label {
+            color: var(--text-muted);
+        }
+
+        .result-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .highlight {
+            color: var(--primary);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Kalkulator Emerytalny</h1>
+    
+    <div class="input-group">
+        <label>Twój obecny wiek</label>
+        <input type="number" id="currentAge" placeholder="np. 30" value="30">
+    </div>
+
+    <div class="input-group">
+        <label>Wiek przejścia na emeryturę</label>
+        <input type="number" id="retirementAge" placeholder="np. 65" value="65">
+    </div>
+
+    <div class="input-group">
+        <label>Obecne oszczędności (PLN)</label>
+        <input type="number" id="currentSavings" placeholder="0" value="10000">
+    </div>
+
+    <div class="input-group">
+        <label>Miesięczna wpłata (PLN)</label>
+        <input type="number" id="monthlyContribution" placeholder="500" value="500">
+    </div>
+
+    <div class="input-group">
+        <label>Przewidywany roczny zwrot/zysk (%)</label>
+        <input type="number" id="annualReturn" step="0.1" value="6">
+    </div>
+
+    <div class="input-group">
+        <label>Średnia roczna inflacja (%)</label>
+        <input type="number" id="inflation" step="0.1" value="2.5">
+    </div>
+
+    <button onclick="calculateRetirement()">Oblicz kapitał</button>
+
+    <div class="results" id="resultsArea">
+        <div class="result-item">
+            <span class="result-label">Lata oszczędzania:</span>
+            <span class="result-value" id="resYears">0</span>
+        </div>
+        <div class="result-item">
+            <span class="result-label">Kapitał nominalny:</span>
+            <span class="result-value" id="resNominal">0 PLN</span>
+        </div>
+        <div class="result-item">
+            <span class="result-label">Siła nabywcza (po inflacji):</span>
+            <span class="result-value highlight" id="resReal">0 PLN</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateRetirement() {
+        // Pobieranie wartości
+        const currentAge = parseFloat(document.getElementById('currentAge').value);
+        const retirementAge = parseFloat(document.getElementById('retirementAge').value);
+        const currentSavings = parseFloat(document.getElementById('currentSavings').value);
+        const monthlyContribution = parseFloat(document.getElementById('monthlyContribution').value);
+        const annualReturn = parseFloat(document.getElementById('annualReturn').value) / 100;
+        const inflation = parseFloat(document.getElementById('inflation').value) / 100;
+
+        const yearsToSave = retirementAge - currentAge;
+        
+        if (yearsToSave <= 0) {
+            alert("Wiek emerytalny musi być wyższy niż obecny wiek!");
+            return;
+        }
+
+        const months = yearsToSave * 12;
+        const monthlyReturn = annualReturn / 12;
+        
+        // Obliczanie przyszłej wartości (kapitał nominalny)
+        // Formula: FV = P(1+r)^n + PMT * [((1+r)^n - 1) / r]
+        let futureValue = currentSavings * Math.pow(1 + monthlyReturn, months);
+        futureValue += monthlyContribution * ((Math.pow(1 + monthlyReturn, months) - 1) / monthlyReturn);
+
+        // Uwzględnienie inflacji (realna siła nabywcza)
+        // PV = FV / (1 + i)^n
+        const realValue = futureValue / Math.pow(1 + inflation, yearsToSave);
+
+        // Formatowanie waluty
+        const formatter = new Intl.NumberFormat('pl-PL', {
+            style: 'currency',
+            currency: 'PLN',
+            maximumFractionDigits: 0
+        });
+
+        // Wyświetlanie wyników
+        document.getElementById('resYears').innerText = yearsToSave;
+        document.getElementById('resNominal').innerText = formatter.format(futureValue);
+        document.getElementById('resReal').innerText = formatter.format(realValue);
+        
+        document.getElementById('resultsArea').classList.add('active');
+    }
+</script>
+
+</body>
+</html>
